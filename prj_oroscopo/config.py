@@ -1,0 +1,1 @@
+DAFAULT_RECIPIENT = 'bonazzigiacomo@yahoo.it'
