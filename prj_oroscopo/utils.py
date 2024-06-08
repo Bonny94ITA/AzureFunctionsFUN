@@ -34,8 +34,8 @@ def get_horoscope_gpt(horoscope, style):
 
     prompt = f"Sei un utile assistente che arricchisce l'oroscopo in italiano con elementi basati sul mondo di: {style}. Se vuoi usare dei nomi a tema {style}, scrivili in inglese."
     response = client.chat.completions.create(
-        # model = 'gpt-4o', 
-        model = 'gpt-3.5-turbo-0125',
+        model = 'gpt-4o', 
+        # model = 'gpt-3.5-turbo-0125',
         messages = [
             {'role' : 'system', 'content' : prompt},
             {'role' : 'user', 'content' : horoscope}
@@ -46,6 +46,67 @@ def get_horoscope_gpt(horoscope, style):
 
     text_enhanced = response.choices[0].message.content.strip()
     return text_enhanced
+
+
+def body_email(paragraphs):
+    paragraphs_html = ""
+    for paragraph in paragraphs:
+        paragraphs_html += f"<p>{paragraph}</p>"
+
+    html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Email Carina</title>
+            <style>
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    color: #333;
+                    background-color: #f7f7f7;
+                }}
+                .container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #ffffff;
+                    border-radius: 10px;
+                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                }}
+                h1 {{
+                    color: #ff6600;
+                    font-size: 28px;
+                    margin-bottom: 20px;
+                }}
+                p {{
+                    font-size: 16px;
+                    line-height: 1.6;
+                }}
+                .highlight {{
+                    background-color: #ffe6cc;
+                    padding: 10px;
+                    border-radius: 5px;
+                }}
+                .signature {{
+                    margin-top: 20px;
+                    border-top: 1px solid #ccc;
+                    padding-top: 20px;
+                    font-style: italic;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Buongiorno dal tuo oroscopo preferito!</h1>
+                {paragraphs_html}
+                <p>Grazie per la tua attenzione!</p>
+                <p class="signature">A domani,<br>Bonny</p>
+            </div>
+        </body>
+        </html>
+    """
+    return html_content
 
 
 def send_email(recipients, cc, subject, content):
@@ -69,7 +130,9 @@ def send_email(recipients, cc, subject, content):
     msg['Subject'] = subject
 
     # Aggiunta del corpo del messaggio
-    msg.attach(MIMEText(content, 'plain'))
+    content_clean = content.split('\n\n')
+    html_content = body_email(content_clean)
+    msg.attach(MIMEText(html_content, 'html'))
 
     # Lista completa dei destinatari
     all_recipients = recipients + cc

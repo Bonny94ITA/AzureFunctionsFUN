@@ -5,7 +5,7 @@ from .utils import get_horoscope, get_horoscope_gpt, send_email
 oroscopo = func.Blueprint()
 """
     {
-        "recipients" : "bonazzigihacomo@yahoo.it",
+        "recipients" : "bonazzigiacomo@yahoo.it",
         "subject" : "test",
         "content" : "Vergine",
         "style" : "Magic The Gathering"
