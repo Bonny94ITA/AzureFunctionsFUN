@@ -4,7 +4,10 @@
 
 # Azure
 azure-functions
+azure-identity 
+azure-keyvault
 
 # Utility
 beautifulsoup4
 requests
+openai

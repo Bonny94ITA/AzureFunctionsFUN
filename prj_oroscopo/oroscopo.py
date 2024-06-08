@@ -1,15 +1,18 @@
 import azure.functions as func
 import logging
-from .utils import get_horoscope, send_email
+from .utils import get_horoscope, get_horoscope_gpt, send_email
 
 oroscopo = func.Blueprint()
-"""{
-    "recipients": "Azure",
-    "subject": "test",
-    "content": "test"
-}"""
+"""
+    {
+        "recipients" : "bonazzigihacomo@yahoo.it",
+        "subject" : "test",
+        "content" : "Vergine",
+        "style" : "Magic The Gathering"
+    }
+"""
 
-@oroscopo.route(route="send_email_oroscopo", auth_level=func.AuthLevel.FUNCTION)
+@oroscopo.route(route = "send_email_oroscopo", methods = ['POST'], auth_level = func.AuthLevel.FUNCTION)
 def send_email_oroscopo(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Send email oroscopo")
 
@@ -19,6 +22,7 @@ def send_email_oroscopo(req: func.HttpRequest) -> func.HttpResponse:
         cc =  req_body.get('cc')
         subject = req_body.get('subject')
         content = req_body.get('content')
+        style = req_body.get('style')
 
         if not recipients:
             raise RuntimeError("'recipients' is mandatory")
@@ -26,11 +30,16 @@ def send_email_oroscopo(req: func.HttpRequest) -> func.HttpResponse:
             raise RuntimeError("'subject' is mandatory")
         if not content:
             raise RuntimeError("'content' is mandatory")
-        
-        content = 'Vergine'
+        if not style:
+            raise RuntimeError("'style' is mandatory")
+
         horoscope = get_horoscope(content)
         logging.info(horoscope)
-        status = send_email(recipients, cc, subject, horoscope)
+
+        horoscope_gpt = get_horoscope_gpt(horoscope, style)
+        logging.info(horoscope_gpt)
+
+        status = send_email(recipients, cc, subject, horoscope_gpt)
 
         return func.HttpResponse(status, status_code = 200)
     except ValueError as e:
