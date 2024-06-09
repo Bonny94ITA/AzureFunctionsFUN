@@ -1,5 +1,6 @@
-import requests
 import logging
+import requests
+import re
 import smtplib
 from bs4 import BeautifulSoup
 from openai import OpenAI
@@ -92,6 +93,7 @@ def get_horoscope_gpt(horoscope, style):
 def body_email(paragraphs):
     paragraphs_html = ""
     for paragraph in paragraphs:
+        paragraph = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', paragraph)
         paragraphs_html += f"<p>{paragraph}</p>"
 
     html_content = f"""
