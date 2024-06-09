@@ -7,7 +7,22 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from . import config
 
+
 def get_horoscope(sign):
+    """
+    Recupera l'oroscopo per il segno zodiacale specificato dal sito web 'Oggi'.
+
+    Args:
+        sign (str): Il segno zodiacale per cui si desidera ottenere l'oroscopo. 
+                    Ad esempio: 'ariete', 'toro', 'gemelli', ecc.
+
+    Returns:
+        str: L'oroscopo del giorno per il segno zodiacale specificato. 
+             Se non viene trovato, restituisce "Horoscope not found".
+
+    Raises:
+        Exception: Se non è possibile recuperare l'oroscopo dal sito web.
+    """
     logging.info("Get horoscope")
 
     url = f'https://www.oggi.it/oroscopo/oroscopo-di-oggi/{sign}-oggi.shtml'
@@ -15,37 +30,63 @@ def get_horoscope(sign):
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
-        horoscope_section = soup.find('div', class_='clearfix rimmed')
+        horoscope_section = soup.find('div', class_ = 'clearfix rimmed')
         if horoscope_section:
-            logging.info("Horoscope sections")
+            logging.info("Horoscope section found")
             paragraphs = horoscope_section.find_all('p')#[:-1]
             horoscope = paragraphs[0].text.strip()
             return horoscope
         else:
+            logging.warning("Horoscope section not found")
             return "Horoscope not found"
     else:
+        logging.error("Unable to get horoscope: HTTP status code {}".format(response.status_code))
         raise Exception("Unable to get horoscope")
+
     
+
 def get_horoscope_gpt(horoscope, style):
+    """
+    Arricchisce un oroscopo in italiano con elementi basati su un tema specificato.
+
+    Args:
+        horoscope (str): L'oroscopo da arricchire.
+        style (str): Il tema su cui basare l'arricchimento (ad esempio, un mondo fantastico, uno stile particolare, ecc.).
+
+    Returns:
+        str: L'oroscopo arricchito con gli elementi basati sul tema specificato.
+    """
     logging.info("Get horoscope GPT")
-    
+
+    # Ottenimento della chiave API di OpenAI
     OPENAI_API_KEY = config.open_ai_credentials()
     client = OpenAI(api_key = OPENAI_API_KEY)
 
-    prompt = f"Sei un utile assistente che arricchisce l'oroscopo in italiano con elementi basati sul mondo di: {style}. Se vuoi usare dei nomi a tema {style}, scrivili in inglese."
-    response = client.chat.completions.create(
-        model = 'gpt-4o', 
-        # model = 'gpt-3.5-turbo-0125',
-        messages = [
-            {'role' : 'system', 'content' : prompt},
-            {'role' : 'user', 'content' : horoscope}
-        ],
-        temperature = 0.6,
-        max_tokens = 512
+    # Creazione del prompt per il modello GPT
+    prompt = (
+        f"Sei un utile assistente che arricchisce l'oroscopo in italiano con elementi basati sul mondo di: {style}. "
+        f"Se vuoi usare dei nomi a tema {style}, scrivili in inglese."
     )
 
-    text_enhanced = response.choices[0].message.content.strip()
-    return text_enhanced
+    try:
+        # Richiesta al modello GPT
+        response = client.chat.completions.create(
+            model = 'gpt-4o', 
+            # model = 'gpt-3.5-turbo-0125',
+            messages=[
+                {'role': 'system', 'content': prompt},
+                {'role': 'user', 'content': horoscope}
+            ],
+            temperature = 0.6,
+            max_tokens = 600
+        )
+
+        # Estrazione del testo arricchito dalla risposta del modello
+        text_enhanced = response.choices[0].message.content.strip()
+        return text_enhanced
+    except Exception as e:
+        logging.error(f"Errore durante l'arricchimento dell'oroscopo: {e}")
+        return None
 
 
 def body_email(paragraphs):
@@ -110,18 +151,29 @@ def body_email(paragraphs):
 
 
 def send_email(recipients, cc, subject, content):
+    """
+    Invia un'email ai destinatari specificati.
+
+    Args:
+        recipients (str o list): Indirizzo email del destinatario o lista di indirizzi email.
+        cc (list): Lista di indirizzi email da mettere in copia. Default è una lista vuota.
+        subject (str): Oggetto dell'email.
+        content (str): Corpo del messaggio email, in formato testo.
+
+    Returns:
+        str: "OK" se l'email è stata inviata con successo, "KO" se c'è stato un errore.
+    """
     logging.info("Send email")
 
+    # Assicurarsi che `recipients` sia una lista
     if isinstance(recipients, str):
         recipients = [recipients]
+    
+    # Gestione del caso in cui cc è None
     if cc is None:
         cc = []
 
-    # Configurazione del server SMTP
-    smtp_server = 'smtp.gmail.com'
-    smtp_port = 587
-
-    # Creazione del messaggio
+    # Creazione del messaggio email
     msg = MIMEMultipart()
     msg['From'] = config.FROM_EMAIL
     msg['To'] = ', '.join(recipients)
@@ -138,12 +190,12 @@ def send_email(recipients, cc, subject, content):
     all_recipients = recipients + cc
 
     try:
-        server = smtplib.SMTP(smtp_server, smtp_port) # Connessione al server SMTP
-        server.starttls() # Avvio della modalità TLS
-        server.login(config.FROM_EMAIL, config.FROM_PASSWORD) # Autenticazione
-        server.sendmail(config.FROM_EMAIL, all_recipients, msg.as_string()) # Invio dell'email
-        server.quit() # Chiusura della connessione
-        
+        server = smtplib.SMTP(config.SMTP_SERVER, config.SMTP_PORT) # Connessione al server SMTP
+        server.starttls()  # Avvio della modalità TLS
+        server.login(config.FROM_EMAIL, config.FROM_PASSWORD)  # Autenticazione
+        server.sendmail(config.FROM_EMAIL, all_recipients, msg.as_string())  # Invio dell'email
+        server.quit()  # Chiusura della connessione
+
         logging.info("Email inviata con successo!")
         return "OK"
     except Exception as e:
