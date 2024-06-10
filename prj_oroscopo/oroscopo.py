@@ -8,7 +8,7 @@ oroscopo = func.Blueprint()
         "recipients" : "bonazzigiacomo@yahoo.it",
         "subject" : "test",
         "content" : "Vergine",
-        "style" : "Magic The Gathering"
+        "style" : "Viaggi"
     }
 """
 

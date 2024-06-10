@@ -44,7 +44,6 @@ def get_horoscope(sign):
         logging.error("Unable to get horoscope: HTTP status code {}".format(response.status_code))
         raise Exception("Unable to get horoscope")
 
-    
 
 def get_horoscope_gpt(horoscope, style):
     """
