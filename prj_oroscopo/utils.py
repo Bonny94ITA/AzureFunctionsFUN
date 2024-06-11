@@ -34,11 +34,8 @@ def get_horoscope(sign):
         horoscope_section = soup.find('div', class_ = 'clearfix rimmed')
         if horoscope_section:
             logging.info("Horoscope section found")
-            paragraphs = horoscope_section.find_all('p')#[:-1]
-            if sign == "Scorpione":
-                horoscope = paragraphs.text.strip()
-            else:
-                horoscope = paragraphs[0].text.strip()
+            paragraphs = horoscope_section.find_all('p')[:-1]
+            horoscope = ' '.join([p.text.strip() for p in paragraphs])
             return horoscope
         else:
             logging.warning("Horoscope section not found")

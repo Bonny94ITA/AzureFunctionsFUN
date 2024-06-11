@@ -7,7 +7,7 @@ oroscopo = func.Blueprint()
     {
         "recipients" : "bonazzigiacomo@yahoo.it",
         "subject" : "test",
-        "content" : "Vergine",
+        "content" : "Gemelli",
         "style" : "Viaggi"
     }
 """
