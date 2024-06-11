@@ -35,7 +35,10 @@ def get_horoscope(sign):
         if horoscope_section:
             logging.info("Horoscope section found")
             paragraphs = horoscope_section.find_all('p')#[:-1]
-            horoscope = paragraphs[0].text.strip()
+            if sign == "Scorpione":
+                horoscope = paragraphs.text.strip()
+            else:
+                horoscope = paragraphs[0].text.strip()
             return horoscope
         else:
             logging.warning("Horoscope section not found")
