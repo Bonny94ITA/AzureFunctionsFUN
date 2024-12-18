@@ -19,7 +19,7 @@ def send_email_oroscopo(req: func.HttpRequest) -> func.HttpResponse:
     try:
         req_body = req.get_json()
         recipients = req_body.get('recipients')
-        cc =  req_body.get('cc')
+        cc = req_body.get('cc')
         subject = req_body.get('subject')
         content = req_body.get('content')
         style = req_body.get('style')
