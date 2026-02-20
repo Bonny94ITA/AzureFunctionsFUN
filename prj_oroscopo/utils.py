@@ -26,12 +26,12 @@ def get_horoscope(sign):
     """
     logging.info("Get horoscope")
 
-    url = f'https://www.oggi.it/oroscopo/oroscopo-di-oggi/{sign}-oggi.shtml'
+    url = f'https://www.oggi.it/oroscopo/oroscopo-di-oggi/{sign}/'
     response = requests.get(url)
 
     if response.status_code == 200:
         soup = BeautifulSoup(response.content, 'html.parser')
-        horoscope_section = soup.find('div', class_ = 'clearfix rimmed')
+        horoscope_section = soup.find('div', class_ = 'oroscopoSign__fullTxt')
         if horoscope_section:
             logging.info("Horoscope section found")
             paragraphs = horoscope_section.find_all('p')[:-1]
@@ -64,26 +64,41 @@ def get_horoscope_gpt(horoscope, style):
 
     # Creazione del prompt per il modello GPT
     prompt = (
-        f"Sei un utile assistente che arricchisce l'oroscopo in italiano con elementi basati sul mondo di: {style}. "
-        f"Se vuoi usare dei nomi a tema {style}, scrivili in inglese."
+        f"Sei un astrologo creativo, ironico e coinvolgente. "
+        f"Il tuo compito è riscrivere l'oroscopo fornito dall'utente in italiano, arricchendolo con riferimenti, metafore e citazioni ispirate al mondo di: {style}. "
+        f"Se usi nomi di personaggi, luoghi o oggetti a tema {style}, scrivili in inglese.\n\n"
+        f"STRUTTURA OBBLIGATORIA:\n"
+        f"- Inizia con un breve paragrafo introduttivo generale (2-3 frasi).\n"
+        f"- Poi scrivi le sezioni **Amore ❤️**, **Lavoro 💼** e **Fortuna 🍀**, ognuna con un voto da 1 a 5 stelle (es. ⭐⭐⭐⭐).\n"
+        f"- Concludi SEMPRE con una frase motivazionale o divertente a tema {style} come chiusura.\n\n"
+        f"REGOLE IMPORTANTI:\n"
+        f"- Scrivi massimo 350 parole. Sii conciso ma completo.\n"
+        f"- Il testo DEVE essere completo: NON interromperlo mai a metà frase.\n"
+        f"- Usa **grassetto** (doppio asterisco) per i titoli delle sezioni.\n"
+        f"- Separa ogni sezione con una riga vuota.\n"
+        f"- Tono: spiritoso, leggero, mai banale."
     )
 
     try:
         # Richiesta al modello GPT
         response = client.chat.completions.create(
-            model = 'gpt-4o', 
-            # model = 'gpt-3.5-turbo-0125',
+            model = 'gpt-5-mini',
             messages=[
                 {'role': 'system', 'content': prompt},
                 {'role': 'user', 'content': horoscope}
             ],
-            temperature = 0.6,
-            max_tokens = 600
+            max_completion_tokens = 4096
         )
 
         # Estrazione del testo arricchito dalla risposta del modello
-        text_enhanced = response.choices[0].message.content.strip()
-        return text_enhanced
+        choice = response.choices[0]
+        logging.info(f"Finish reason: {choice.finish_reason}")
+
+        if choice.message.content:
+            return choice.message.content.strip()
+        else:
+            logging.error(f"Risposta GPT vuota. Full message: {choice.message}")
+            return None
     except Exception as e:
         logging.error(f"Errore durante l'arricchimento dell'oroscopo: {e}")
         return None
@@ -93,58 +108,46 @@ def body_email(paragraphs):
     paragraphs_html = ""
     for paragraph in paragraphs:
         paragraph = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', paragraph)
-        paragraphs_html += f"<p>{paragraph}</p>"
+        paragraphs_html += f'<p style="font-size:15px;line-height:1.7;color:#3a3a5c;margin:0 0 14px 0;">{paragraph}</p>'
 
     html_content = f"""
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="it">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Email Carina</title>
-            <style>
-                body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    color: #333;
-                    background-color: #f7f7f7;
-                }}
-                .container {{
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background-color: #ffffff;
-                    border-radius: 10px;
-                    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-                }}
-                h1 {{
-                    color: #ff6600;
-                    font-size: 28px;
-                    margin-bottom: 20px;
-                }}
-                p {{
-                    font-size: 16px;
-                    line-height: 1.6;
-                }}
-                .highlight {{
-                    background-color: #ffe6cc;
-                    padding: 10px;
-                    border-radius: 5px;
-                }}
-                .signature {{
-                    margin-top: 20px;
-                    border-top: 1px solid #ccc;
-                    padding-top: 20px;
-                    font-style: italic;
-                }}
-            </style>
+            <title>Il tuo Oroscopo</title>
         </head>
-        <body>
-            <div class="container">
-                <h1>Buongiorno dal tuo oroscopo preferito!</h1>
-                {paragraphs_html}
-                <p>Grazie per la tua attenzione!</p>
-                <p class="signature">A domani,<br>Bonny</p>
-            </div>
+        <body style="margin:0;padding:0;background-color:#0f1029;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f1029;padding:30px 0;">
+                <tr>
+                    <td align="center">
+                        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                            <!-- Header -->
+                            <tr>
+                                <td style="background-color:#7c3aed;padding:36px 32px 28px 32px;text-align:center;">
+                                    <p style="font-size:36px;margin:0 0 8px 0;">&#10024;&#127769;&#10024;</p>
+                                    <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">Il tuo Oroscopo del Giorno</h1>
+                                    <p style="margin:8px 0 0 0;font-size:14px;color:#e0d4fc;font-weight:400;">Scopri cosa hanno in serbo le stelle per te</p>
+                                </td>
+                            </tr>
+                            <!-- Contenuto -->
+                            <tr>
+                                <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+                                    {paragraphs_html}
+                                </td>
+                            </tr>
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color:#f3f1fa;padding:20px 32px;border-top:1px solid #e8e6f0;text-align:center;">
+                                    <p style="margin:0 0 4px 0;font-size:14px;color:#764ba2;font-weight:600;">A domani! &#128156;</p>
+                                    <p style="margin:0;font-size:13px;color:#9a95b0;">Con affetto, Bonny</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
         </body>
         </html>
     """

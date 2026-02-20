@@ -4,8 +4,8 @@
 
 # Azure
 azure-functions
-azure-identity 
-azure-keyvault
+azure-identity
+azure-keyvault-secrets
 
 # Utility
 beautifulsoup4

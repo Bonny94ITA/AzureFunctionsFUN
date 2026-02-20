@@ -7,7 +7,7 @@ oroscopo = func.Blueprint()
     {
         "recipients" : "bonazzigiacomo@yahoo.it",
         "subject" : "test",
-        "content" : "Gemelli",
+        "sign" : "gemelli",
         "style" : "Viaggi"
     }
 """
@@ -21,22 +21,24 @@ def send_email_oroscopo(req: func.HttpRequest) -> func.HttpResponse:
         recipients = req_body.get('recipients')
         cc = req_body.get('cc')
         subject = req_body.get('subject')
-        content = req_body.get('content')
+        sign = req_body.get('sign') or req_body.get('content')  # retrocompatibile
         style = req_body.get('style')
 
         if not recipients:
-            raise RuntimeError("'recipients' is mandatory")
+            raise ValueError("'recipients' is mandatory")
         if not subject:
-            raise RuntimeError("'subject' is mandatory")
-        if not content:
-            raise RuntimeError("'content' is mandatory")
+            raise ValueError("'subject' is mandatory")
+        if not sign:
+            raise ValueError("'sign' is mandatory")
         if not style:
-            raise RuntimeError("'style' is mandatory")
+            raise ValueError("'style' is mandatory")
 
-        horoscope = get_horoscope(content)
+        horoscope = get_horoscope(sign)
         logging.info(horoscope)
 
         horoscope_gpt = get_horoscope_gpt(horoscope, style)
+        if not horoscope_gpt:
+            raise RuntimeError("GPT enrichment failed")
         logging.info(horoscope_gpt)
 
         status = send_email(recipients, cc, subject, horoscope_gpt)
