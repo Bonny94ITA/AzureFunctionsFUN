@@ -12,7 +12,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'
-  PYTHON_VERSION: '3.13'
+  PYTHON_VERSION: '3.11'
 
 jobs:
   build:
